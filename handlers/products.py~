@@ -1,0 +1,33 @@
+from aiogram import types, Dispatcher
+from aiogram.dispatcher.filters import Text
+from db import main_db
+import logging
+
+
+async def show_products(message: types.Message):
+    # Получаем все товары из базы данных
+    products = main_db.fetch_all_products()
+    logging.info(f"Найдено товаров: {len(products)}")
+
+    if not products:
+        await message.answer("Нет товаров в базе данных.")
+        return
+
+    # Формируем сообщение с данными о товарах
+    product_list = ""
+    for product in products:
+        product_list += (
+            f"Название: {product['name']}\n"
+            f"Категория: {product['category']}\n"
+            f"Размер: {product['size']}\n"
+            f"Цена: {product['price']}\n"
+            f"Артикул: {product['product_id']}\n"
+            f"Фото: {product['photo']}\n\n"
+        )
+
+    logging.info(f"Отправляем сообщение с товарами: {product_list[:100]}...")  # Логируем начало списка товаров
+
+    # Если товаров слишком много, отправляем их несколькими сообщениями
+    max_message_length = 4096
+    for i in range(0, len(product_list), max_message_length):
+        await message.answer(product_list[i:i + max_message_length])
